@@ -23,4 +23,4 @@ projects[drupal][download][tag] = 7.14
 projects[dev][type] = profile
 projects[dev][version] = 1.x-dev
 projects[dev][download][type] = git
-projects[dev][download][url] = https://mikewink@github.com/mikewink/drupal7-profile-dev.git
+projects[dev][download][url] = https://github.com/DUG-Leipzig/dugl-profile.git
