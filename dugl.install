@@ -1,0 +1,230 @@
+<?php
+/**
+* Implement hook_install().
+*
+* Perform actions to set up the site for this profile.
+*/
+function dugl_install() {
+
+  define("DEVEMAIL", variable_get('site_mail', 'foo@bar.baz'));
+  define("SITENAME", variable_get('site_name', 'Drupal User Group Leipzig'));
+
+  // Site information
+  // The site_name and site_mail variables are set during the installation
+  // [admin/config/system/site-information]
+  variable_set('site_slogan', st('Drupal @version installation profile', array('@version' => VERSION)));
+  variable_set('default_nodes_main', '5');
+  variable_set('site_frontpage', 'node');
+
+  // Roles
+  // [admin/people/permissions/roles]
+
+  // Create a role for site administrators
+  $admin_role = new stdClass();
+  $admin_role->name = 'administrator';
+  $admin_role->weight = 2;
+  user_role_save($admin_role);
+  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+
+  // Assign user 1 the "administrator" role.
+  db_insert('users_roles')
+    ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
+    ->execute();
+
+  // Create a role for site managers
+  $manager_role = new stdClass();
+  $manager_role->name = 'manager';
+  $manager_role->weight = 3;
+  user_role_save($manager_role);
+
+  // Add manager user 2
+  $manager_account = array(
+    'name' => 'manager',
+    'pass' => 'manager',
+    'mail' => DEVEMAIL,
+    'status' => 1,
+    'init' => DEVEMAIL,
+  );
+  $manager_account = user_save(null, $manager_account);
+
+  // Assign the client to the "manager" role.
+  $role = user_role_load_by_name('manager');
+  db_insert('users_roles')
+    ->fields(array('uid' => $manager_account->uid, 'rid' => $role->rid))
+    ->execute();
+
+  // Create a role for site editors
+  $editor_role = new stdClass();
+  $editor_role->name = 'editor';
+  $editor_role->weight = 4;
+  user_role_save($editor_role);
+
+  // Add editor user 3
+  $editor_account = array(
+    'name' => 'editor',
+    'pass' => 'editor',
+    'mail' => DEVEMAIL,
+    'status' => 1,
+    'init' => DEVEMAIL,
+  );
+  $editor_account = user_save(null, $editor_account);
+
+  // Assign the client to the "editor" role.
+  $role = user_role_load_by_name('editor');
+  db_insert('users_roles')
+    ->fields(array('uid' => $editor_account->uid, 'rid' => $role->rid))
+    ->execute();
+
+  // Account settings
+  // [admin/config/people/accounts]
+  variable_set('user_admin_role', '1');
+  variable_set('user_register', '0');
+  variable_set('user_email_verification', '1');
+  variable_set('user_cancel_method', 'user_cancel_delete');
+
+  // User picture settings
+
+  // <!-- add user picture settings here -->
+
+  // Languages
+  // [admin/config/regional/language]
+  if(module_exists('locale')) {
+    // Add German to the active languages
+
+    // function deprecated in D8: http://drupal.org/node/1297712
+    $langcode = 'de';
+    $name = 'German';
+    $native = 'Deutsch';
+    $direction = 0;
+    $domain = '';
+    $prefix = 'de';
+    locale_add_language($langcode, $name, $native, $direction, $domain, $prefix);
+  }
+
+  // @TODO
+  // language_default holds the default language object
+  //variable_set('language_count', '2');
+  //variable_set('language_default', '');
+
+  // Create a Home link in the main menu.
+  $item = array(
+    'link_title' => st('DUGL Home'),
+    'link_path' => '<front>',
+    'menu_name' => 'main-menu',
+  );
+  menu_link_save($item);
+
+  // Update the menu router information.
+  menu_rebuild();
+
+  // Activate and set stark as default theme.
+  // [admin/appearance/list]
+  $theme_list_enable = array('stark');
+  theme_enable($theme_list_enable);
+
+  variable_set('theme_default', 'stark');
+  variable_set('admin_theme', 'seven');
+  variable_set('node_admin_theme', '1');
+
+  $theme_list_disable = array('bartik');
+  theme_disable($theme_list_disable);
+
+  // Regional settings
+  // [admin/config/regional/settings]
+  variable_set('date_first_day', '1'); // Monday
+  variable_set('configurable_timezones', '0');
+
+  // Date and time types / formats
+  // [admin/config/regional/date-time]
+  variable_set('date_format_long', 'l, j. F Y - G:i');
+  variable_set('date_format_medium', 'j. F Y - G:i');
+  variable_set('date_format_short', 'd.m.Y - H:i');
+
+  // <!-- add new date types and formats here -->
+
+  // Feed settings
+  // [admin/config/services/rss-publishing]
+  $feed_description = st('@site_name installation RSS feed.', array('@site_name', variable_get('site_name', SITENAME . 'RSS Feed')));
+  variable_set('feed_description', $feed_description);
+  variable_set('feed_default_items', '5');
+  variable_set('feed_item_length', 'fulltext');
+
+  // File system
+  // [admin/config/media/file-system]
+
+  drupal_mkdir('../tmp');
+  drupal_mkdir('../files');
+
+  variable_set('file_temporary_path', '../tmp');
+  variable_set('file_public_path', 'sites/default/files');
+  variable_set('file_private_path', '../files');
+  variable_set('file_default_scheme', 'public');
+
+  // Images styles
+  // [admin/config/media/image-styles]
+
+  // <!-- add or edit default image styles here -->
+
+  // Image toolkit
+  // [admin/config/media/image-toolkit]
+  variable_set('image_toolkit', 'gd');
+  variable_set('image_jpeg_quality', '100');
+
+  // Performance
+  // [admin/config/development/performance]
+  /*
+  variable_set('cache', '1');
+  variable_set('cache_lifetime', '600'); // in seconds 600sec = 10min
+  variable_set('page_cache_maximum_age', '900'); // in seconds 900sec = 15min
+  variable_set('block_cache', '1');
+  variable_set('page_compression', '1');
+  variable_set('preprocess_css', '1');
+  variable_set('preprocess_js', '1');
+  */
+
+  // Maintenance mode
+  // [admin/config/development/maintenance]
+  $maintenance_mode_message = st('@site_name is currently under maintenance. We should be back shortly. Thank you for your patience.', array('@site_name' => variable_get('site_name', SITENAME)));
+  variable_set('maintenance_mode_message', $maintenance_mode_message);
+  variable_set('maintenance_mode', '0');
+
+  // Devel settings
+  // [admin/config/development/devel]
+  if(module_exists('devel')) {
+    variable_set('devel_error_handler', 3);
+    variable_set('devel_krumo_skin', 'blue');
+    variable_set('devel_rebuild_theme_registry', 1);
+  }
+
+  // Text formats
+  // [admin/config/content/formats]
+
+  // <!-- add or edit default text formats here -->
+
+  // Cron
+  // [admin/config/system/cron]
+  variable_set('cron_safe_threshold', '10800'); // in seconds 10800sec = 3h
+
+  // Views settings
+  // [admin/structure/views/settings]
+  if(module_exists('views')) {
+    variable_set('views_ui_show_listing_filters', 1);
+    variable_set('views_ui_show_advanced_help_warning', 1);
+    variable_set('views_ui_show_master_display', 1);
+    variable_set('views_ui_show_advanced_column', 1);
+    variable_set('views_ui_custom_theme', '_default');
+    variable_set('views_exposed_filter_any_label', 'new_key');
+    variable_set('views_ui_always_live_preview', 1);
+    variable_set('views_ui_show_preview_information', 1);
+    variable_set('views_ui_show_sql_query_where', 'below');
+    variable_set('views_ui_show_sql_query', 1);
+    variable_set('views_ui_show_performance_statistics', 1);
+    variable_set('views_show_additional_queries', 1);
+    variable_set('views_skip_cache', 0);
+    variable_set('views_sql_signature', 0);
+    variable_set('views_no_javascript', 0);
+    variable_set('views_devel_output', 0);
+    variable_set('views_devel_region', 'footer');
+    variable_set('views_localization_plugin', 'core');
+  }
+}

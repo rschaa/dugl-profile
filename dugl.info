@@ -1,0 +1,48 @@
+name = DUGL Site Profile
+description = Drupal User Group Leipzig D7 site profile.
+core = 7.x
+
+; Core
+dependencies[] = block
+dependencies[] = contextual
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = dblog
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = locale
+
+; Contrib
+dependencies[] = admin_menu
+dependencies[] = admin_devel
+dependencies[] = admin_menu_toolbar
+dependencies[] = devel
+dependencies[] = features
+dependencies[] = strongarm
+dependencies[] = entity
+dependencies[] = rules
+dependencies[] = rules_admin
+dependencies[] = views
+dependencies[] = views_ui
+dependencies[] = ctools
+dependencies[] = page_manager
+dependencies[] = views_content
+dependencies[] = advanced_help
+dependencies[] = panels
+dependencies[] = email
+dependencies[] = link
+dependencies[] = date
+dependencies[] = date_views
+dependencies[] = field_group
+dependencies[] = module_filter
+dependencies[] = token
+dependencies[] = backup_migrate
+dependencies[] = pathauto
+
+; Profile
+files[] = dev.profile
